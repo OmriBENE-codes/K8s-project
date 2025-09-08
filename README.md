@@ -1,53 +1,72 @@
-# K8s-project
-Kubernetes rolling project
-README
+# K8s-Project  
+Kubernetes Rolling Project – AWS Dashboard
 
-. Project goal: containerized Flask app that connects to AWS and shows EC2, VPCs, Load Balancers, and AMIs in a simple web UI.
-. Reason for Docker: consistent runtime, no local dependency issues, portable across environments.
-. Reason for Flask: lightweight, fast to set up, good for small dashboards and APIs.
-. Reason for Boto3: official AWS SDK for Python, handles authentication and API calls directly.
-. Region set to us-east-1: common AWS default, easy to test with.
+## Project Goal  
+A containerized **Flask** app that connects to **AWS** and displays:  
+- EC2 instances  
+- VPCs  
+- Load Balancers  
+- AMIs  
 
-Steps in Dockerfile
+All in a simple web UI.  
 
-. Base image: python:3.11-slim → small, secure, faster build times.
-. ENV settings:
 
-PYTHONDONTWRITEBYTECODE=1 → no .pyc files, cleaner container.
+## Why These Choices  
 
-PYTHONNUMBUFFERED=1 → ensures logs flush immediately (important for Docker logs).
-. Workdir: /app → keeps code organized inside container.
-. Installed curl → useful for debugging network connectivity inside container.
-. Copy requirements.txt first → allows Docker layer caching (faster builds if only code changes).
-. Install dependencies with pip install --no-cache-dir → avoids unnecessary cache, keeps image smaller.
-. Copy rest of project → ensures app code is inside container.
-. CMD ["python", "main.py"] → starts the Flask app automatically.
+- **Docker** →                   consistent runtime, no local dependency issues, portable across environments.  
+- **Flask** →                    lightweight, fast to set up, great for small dashboards/APIs.  
+- **Boto3** →                    official AWS SDK for Python, handles authentication and API calls directly.  
+- **Region: us-east-1** →        common AWS default, easy to test with.  
 
-Steps in main.py
 
-. Fetch AWS credentials from environment → secure, no hardcoding.
-. Create Boto3 session → used for EC2 + ELB clients.
-. Flask route / → queries AWS for:
+## Dockerfile Overview  
 
-EC2 instances (ID, state, type, IP).
+- **Base image**: `python:3.11-slim` → small, secure, faster build times.  
+- **ENV settings**:  
+  - `PYTHONDONTWRITEBYTECODE=1` → avoids `.pyc` files.  
+  - `PYTHONUNBUFFERED=1` → ensures logs flush immediately.  
+- **Workdir**: `/app` → keeps code organized.  
+- **Installed curl** → useful for debugging inside container.  
+- **Copy requirements.txt first** → enables Docker layer caching.  
+- **Install dependencies**: `pip install --no-cache-dir -r requirements.txt` → smaller image.  
+- **Copy rest of project** → adds app code.  
+- **CMD**: `["python", "main.py"]` → starts Flask app.  
 
-VPCs (ID, CIDR).
+## App Flow (main.py)  
 
-Load Balancers (Name, DNS).
+1. Fetch AWS credentials from environment variables → secure, no hardcoding.  
+2. Create **Boto3 session** → used for EC2 + ELB clients.  
+3. Flask route `/` → queries AWS for:  
+   - **EC2 instances** → ID, state, type, IP.  
+   - **VPCs** → ID, CIDR.  
+   - **Load Balancers** → Name, DNS.  
+   - **AMIs** → AMI ID, Name.  
+4. Render results in **HTML tables** → easy to read.  
+5. App runs on `0.0.0.0:5001` → accessible from outside container.  
 
-AMIs owned by account (AMI ID, Name).
-. Results rendered in simple HTML tables → easy to read from browser.
-. App runs on host 0.0.0.0, port 5001 → accessible from outside container.
+## Requirements  
 
-Requirements file
+- `flask`  
+- `boto3`  
 
-. Keeps dependencies tracked.
-. Main ones: flask, boto3.
-. Installed during Docker build so container is self-contained.
+Installed during Docker build so container is self-contained.  
 
-How to run
+## How to Run  
 
-. Build image: docker build -t aws-dashboard .
-. Run container (with AWS creds as env vars):
-docker run -p 5001:5001 -e AWS_ACCESS_KEY_ID=xxx -e AWS_SECRET_ACCESS_KEY=yyy aws-dashboard
-. Open in browser: http://localhost:5001
+### Option 1: Build locally  
+```bash
+docker build -t aws-dashboard .
+docker run -p 5001:5001 \
+  -e AWS_ACCESS_KEY_ID=xxx \
+  -e AWS_SECRET_ACCESS_KEY=yyy \
+  aws-dashboard
+```
+
+Option 2: Pull from Docker Hub
+Skip building and use the prebuilt image:
+```
+docker pull omribe/aws-dashboard:latest
+docker run -p 5001:5001 \
+  -e AWS_ACCESS_KEY_ID=xxx \
+  -e AWS_SECRET_ACCESS_KEY=yyy \
+```
