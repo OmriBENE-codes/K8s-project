@@ -1,22 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "flask-aws-monitor.fullname" . }}
+  name: {{ .Release.Name }}
   labels:
-    {{ include "flask-aws-monitor.labels" . | nindent 4 }}
+    {{ include "monitor.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{ include "flask-aws-monitor.selectorLabels" . | nindent 6 }}
+      {{ include "monitor.labels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{ include "flask-aws-monitor.labels" . | nindent 8 }}
+        {{ include "monitor.labels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "flask-aws-monitor.serviceAccountName" . }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
